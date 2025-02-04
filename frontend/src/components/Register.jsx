@@ -1,0 +1,142 @@
+import axios from "axios";
+import React, { useState } from "react";
+
+const Register = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState(""); // Make sure this is a string
+  const [userId, setUserId] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [step, setStep] = useState(1);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+
+    if (!name || !email || !password) {
+      setError("Name, Email, and Password are required");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://localhost:5000/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      if(response.status === 200){
+        console.log("response", response)
+        setUserId(response.data.userId);
+      }
+      setStep(2);
+      setError("");
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
+      console.error("Register error:", error);
+    }
+  };
+
+  const handleVerify = async (e) => {
+    e.preventDefault(); // Prevent default form submission
+
+    try {
+      const response = await axios.post("http://localhost:5000/auth/verify", {
+        userId,
+        verificationCode,
+      });
+
+      if(response.status === 200){
+        console.log("response", response);
+        setStep(3);
+      }
+
+      
+      setError("");
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Verification failed. Please try again."
+      );
+      console.error("Verify error:", error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-96">
+        <h2 className="text-2xl font-bold mb-6 text-center">
+          {step === 1 ? "Register" : "Verify Email"}
+        </h2>
+        {error && <p className="text-red-500 text-center">{error}</p>}{" "}
+        {/* Display the error message here */}
+        {step === 1 && (
+          <form onSubmit={handleRegister} className="space-y-4">
+            <input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+            <button
+              type="submit"
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+            >
+              Register
+            </button>
+          </form>
+        )}
+        {step === 2 && (
+          <form onSubmit={handleVerify} className="space-y-4">
+            <p className="text-center">
+              Enter the verification code sent to your email
+            </p>
+            <input
+              type="text"
+              placeholder="Verification Code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+            <button
+              type="submit"
+              className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+            >
+              Verify
+            </button>
+          </form>
+        )}
+        {step === 3 && (
+          <div className="text-center">
+            <p className="text-green-500">
+              Your email has been verified successfully!
+            </p>
+            <a href="/auth/login" className="text-blue-500">
+              Go to Login
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Register;
