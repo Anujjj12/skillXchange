@@ -1,13 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      console.log(storedUser)
+    }
+  }, []);
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
 
     if (!email || !password) {
       setError("Email and Password are required");
@@ -20,9 +35,20 @@ export default function Login() {
         password,
       });
 
+      const { token, user } = response.data;
 
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      console.log("Login Success! Token stored.");
+      
+      setError("");
+      navigate("/dashboard");
+      window.location.reload();
+      console.log("Token : ", token);
+      console.log("User : ", user);
     } catch (error) {
-      setError(error.response.data.message);
+      setError(error.response?.data?.message || "Login failed");
       console.error("Login error:", error);
     }
   };
@@ -60,16 +86,6 @@ export default function Login() {
             Login
           </button>
         </form>
-
-        <div className="text-center mt-4">
-          <p>Or</p>
-          <button
-            onClick={() => signIn("google")}
-            className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 mt-2"
-          >
-            Continue with Google
-          </button>
-        </div>
 
         <p className="text-center mt-4">
           Don't have an account?{" "}
