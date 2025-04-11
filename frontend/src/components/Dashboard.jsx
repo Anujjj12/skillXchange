@@ -32,10 +32,13 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  if (!user) return <p>Loading user...</p>;
+  if(error) return <p>{error}</p>;
   const shouldShowSuggestions = !matchedUsers || matchedUsers.length === 0;
 
   return (
     <div className="container mx-auto p-4">
+      <p> {user.name} </p>
       <h2 className="text-xl font-semibold mb-2">{userName}</h2>
       <h2 className="text-2xl font-bold mb-4">Skill Exchange Suggestions</h2>
 

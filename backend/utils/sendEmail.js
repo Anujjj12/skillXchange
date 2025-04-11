@@ -1,4 +1,6 @@
-const transporter = require("../config/emailConfig"); // ✅ Ensure correct path
+const transporter = require("../config/emailConfig"); 
+const dotenv = require("dotenv");
+dotenv.config();
 
 const sendEmail = async (to, subject, text) => {
   const mailOptions = {

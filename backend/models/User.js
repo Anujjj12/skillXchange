@@ -20,6 +20,10 @@ const UserSchema = new mongoose.Schema({
     ref: "Subscription",
   },
   freeConnectionLeft: { type: Number, default: 2 },
+  isBanned: {
+    type: Boolean,
+    default: false
+  }
 });
 
 function skillLimit(val) {

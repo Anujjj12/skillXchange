@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from 'react-toastify';
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -36,7 +37,7 @@ export default function Login() {
       });
 
       const { token, user } = response.data;
-
+      toast.success("Logged in successfully!");
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -48,6 +49,7 @@ export default function Login() {
       console.log("Token : ", token);
       console.log("User : ", user);
     } catch (error) {
+      toast.error("Login failed. Check your credentials.");
       setError(error.response?.data?.message || "Login failed");
       console.error("Login error:", error);
     }

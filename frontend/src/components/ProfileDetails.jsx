@@ -5,6 +5,7 @@ import useAuth from "@/hooks/useAuth";
 import { Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { toast } from "react-toastify";
 
 export default function ProfileDetails() {
   const navigate = useNavigate();
@@ -22,13 +23,16 @@ export default function ProfileDetails() {
 
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [hasReported, setHasReported] = useState(false);
 
+  // For Room Name
   useEffect(() => {
     if (currentUser && id) {
       setRoomName(`meet-${currentUser._id}-${id}`);
     }
   }, [currentUser, id]);
 
+  // To fetch user details
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
@@ -46,6 +50,7 @@ export default function ProfileDetails() {
     fetchUserDetails();
   }, [id]);
 
+  // To fetch user requests 
   useEffect(() => {
     const fetchRequestStatus = async () => {
       if (currentUser) {
@@ -65,6 +70,7 @@ export default function ProfileDetails() {
     return () => clearInterval(interval);
   }, [id, currentUser]);
 
+  // To fetch active meetings
   useEffect(() => {
     const fetchActiveMeeting = async () => {
       setLoadingMeeting(true);
@@ -85,6 +91,25 @@ export default function ProfileDetails() {
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  // To fetch report status
+  useEffect(() => {
+    const checkIfReported = async () => {
+      if (!currentUser || !id) return;
+  
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/user/has-reported/${id}?reporterId=${currentUser._id}`
+        );
+        setHasReported(res.data.hasReported);
+      } catch (err) {
+        console.error("Failed to check report status:", err);
+      }
+    };
+  
+    checkIfReported();
+  }, [currentUser, id]);
+
+  // Connection request sending method
   const sendConnectionRequest = async () => {
     if (!currentUser) {
       setMessage("User not found");
@@ -100,6 +125,7 @@ export default function ProfileDetails() {
         }
       );
 
+      toast.success("Connection request sent!");
       setMessage(response.data.message);
 
       await axios.post("http://localhost:5000/user/notifications", {
@@ -114,6 +140,7 @@ export default function ProfileDetails() {
     }
   };
 
+  // To handle accept request 
   const handleAcceptRequest = async () => {
     try {
       const response = await axios.post(
@@ -125,12 +152,14 @@ export default function ProfileDetails() {
       );
 
       setRequestStatus("accepted");
+      toast.success("Connection request accepted!");
       setMessage(response.data.message);
     } catch (error) {
       setMessage(error.response.data.message);
     }
   };
 
+  // To handle reject request
   const handleRejectRequest = async () => {
     try {
       const response = await axios.post(
@@ -142,12 +171,14 @@ export default function ProfileDetails() {
       );
 
       setRequestStatus("none");
+      toast.success("Connection request rejected!");
       setMessage(response.message);
     } catch (error) {
       setMessage("Caught Error in rejecting request");
     }
   };
 
+  // To create meeting
   const createMeeting = async () => {
     try {
       const res = await axios.post("http://localhost:5000/api/meet/create", {
@@ -156,28 +187,45 @@ export default function ProfileDetails() {
         roomName,
       });
 
+      toast.success("Meeting joined successfully!");
       navigate(`/meet/${roomName}?userId=${currentUser._id}`);
     } catch (error) {
       console.error("Error creating meeting:", error);
     }
   };
 
+  // To handle report
   const handleReport = async () => {
     try {
-      await axios.post("http://localhost:5000/user/report", {
+      const res = await axios.post("http://localhost:5000/user/report", {
         reporterId: currentUser._id,
-        reportedUserId: user._id,
+        reportedUserId: id,
         reason: reportReason,
       });
-
-      alert("Report submitted. Thank you!");
+  
+      if (res.status === 200) {
+        toast.success("Report submitted successfully!");
+        setHasReported(true);
+      }
       setReportReason("");
       setReportOpen(false);
     } catch (error) {
-      console.error("Error submitting report:", error);
-      alert("Failed to submit report.");
+      const status = error.response?.status;
+      const message = error.response?.data?.message || "Something went wrong.";
+  
+      if (status === 400) {
+        toast.error("You have already reported this user.");        
+        setHasReported(true);
+      } else if (status === 403) {
+        toast.error("You cannot report yourself.");
+      } else {
+        toast.error("Failed to submit report. Please try again later.");
+      }
+  
+      console.error("Error submitting report:", message);
     }
   };
+  
 
   if (loading) return <p>Loading user details...</p>;
   if (error) return <p>{error}</p>;
@@ -198,6 +246,7 @@ export default function ProfileDetails() {
           <Button
             variant="ghost"
             onClick={() => setReportOpen(true)}
+            disabled={hasReported}
             className="text-red-500"
           >
             <Flag className="w-5 h-5" />
@@ -287,8 +336,9 @@ export default function ProfileDetails() {
           </select>
 
           <Button
+            variant="ghost"
             onClick={handleReport}
-            disabled={!reportReason}
+            disabled={!reportReason || hasReported}
             className="w-full mt-4"
           >
             Submit Report

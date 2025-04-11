@@ -36,8 +36,10 @@ const Register = () => {
         setUserId(response.data.userId);
         setStep(2);
       }
+      toast.success("Verify your email to complete registration!");
       setError("");
     } catch (error) {
+      toast.error("Registration failed. Check your credentials.");
       setError("Registration failed. Please try again.");
     }
   };
@@ -49,8 +51,14 @@ const Register = () => {
         userId,
         verificationCode,
       });
-      if (response.status === 200) setStep(3);
+      
+      if (response.status === 200){
+        setError("");
+        toast.success("Email verified successfully!");
+        setStep(3);
+      } 
     } catch (error) {
+      toast.error("Verification failed. Check your code.");
       setError("Verification failed. Please try again.");
     }
   };

@@ -5,7 +5,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 const ConnectionRequest = require("../models/ConnectionRequest");
 const Subscription = require("../models/Subscription");
 const Notification = require("../models/Notification");
+const Report = require("../models/Report");
+const sendEmail = require("../utils/sendEmail");
 const router = express.Router();
+
 
 router.get("/suggestions", authMiddleware, async (req, res) => {
   try {
@@ -66,6 +69,12 @@ router.post("/connect/request", async (req, res) => {
 
     const newRequest = new ConnectionRequest({ senderId, receiverId });
     await newRequest.save();
+
+    await sendEmail(
+      receiver.email,
+      "New Connection Request",
+      `${sender.name} (${sender.email}) sent you a connection request on SkillSwap.`
+    );
     
     res.status(200).json({ message: "Connection request sent" });
 
@@ -307,5 +316,78 @@ router.get("/getusers", authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+
+router.post("/report", async (req, res) => {
+  const { reporterId, reportedUserId, reason } = req.body;
+
+  try {
+
+    const reporter = await User.findById(reporterId);
+    const reported = await User.findById(reportedUserId);
+
+    if (reporterId === reportedUserId) {
+      return res.status(400).json({ message: "You cannot report yourself." });
+    }
+
+    const existingReport = await Report.findOne({ reporterId, reportedUserId });
+    if (existingReport) {
+      return res.status(400).json({ message: "You have already reported this user." });
+    }
+
+    const report = new Report({ reporterId, reportedUserId, reason });
+    await report.save();
+
+    const totalReports = await Report.countDocuments({ reportedUserId });
+
+    if (totalReports >= 5) {
+      await User.findByIdAndUpdate(reportedUserId, { isBanned: true });
+    }
+
+    await sendEmail(
+      reported.email,
+      "You’ve been reported on SkillSwap",
+      `Hello ${reported.name},\n\nYou’ve been reported by another user for: "${reason}".\nOur team will review this.\n\n- SkillXChange Team`
+    )
+
+    return res.status(200).json({ message: "Report submitted successfully." });
+
+  } catch (error) {
+    console.error("Error submitting report:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+});
+
+router.get("/has-reported/:reportedUserId", async (req, res) => {
+  const { reporterId } = req.query;
+  const { reportedUserId } = req.params;
+
+  console.log("Reporter ID:", reporterId);
+  if (!reporterId) {
+    return res.status(400).json({ message: "Missing reporter ID" });
+  }
+
+  try {
+    const existing = await Report.findOne({
+      reporter: reporterId,
+      reportedUser: reportedUserId,
+    });
+
+    res.json({ hasReported: !!existing });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 module.exports = router;

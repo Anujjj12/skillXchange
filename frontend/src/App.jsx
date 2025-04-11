@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
- // Import Layout
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Dashboard from "./components/Dashboard";
@@ -10,12 +9,15 @@ import Subscription from "./components/Subscription";
 import Meet from "./components/Meet";
 import Chat from "./components/Chat";
 import UserList from "./components/UserList";
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
 
 export default function App() {
   return (
+    <>
+    <ToastContainer position="top-right" autoClose={3000} />
     <Router>
       <Routes>
-        {/* Wrap all routes inside the Layout */}
         <Route element={<Layout />}>
           {/* <Route path="/" element={<Home />} /> */}
           {/* <Route path="/about" element={<About />} /> */}
@@ -37,5 +39,6 @@ export default function App() {
         </Route>
       </Routes>
     </Router>
+    </>
   );
 }
