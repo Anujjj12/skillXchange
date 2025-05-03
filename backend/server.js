@@ -13,7 +13,7 @@ const subscriptionRoutes = require("./routes/subscription");
 const meetRoutes = require("./routes/meeting");
 const messageRoutes = require("./routes/message");
 const upload = require("./middleware/upload");
-
+const recommendChannelVideos = require("./controllers/recommendChannelVideos");
 dotenv.config();
 connectDB();
 
@@ -40,6 +40,7 @@ app.use("/subscription", subscriptionRoutes);
 app.use("/api/meet", meetRoutes);
 app.use("/messages", messageRoutes);
 app.use("/uploads", express.static("uploads"));
+app.use("/recommend-channel-videos", recommendChannelVideos)
 
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {

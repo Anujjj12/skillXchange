@@ -2,7 +2,33 @@ const express = require("express");
 const router = express.Router();
 const Meeting = require("../models/Meeting");
 const User = require("../models/User");
+const crypto = require("crypto");
 
+const APP_ID = 1636277379; // Replace with your actual App ID
+const SERVER_SECRET = "5aee9818133828e154ff100b3fec5661"; // Replace with your actual Server Secret
+
+function generateToken(appId, userId, serverSecret, effectiveTimeInSeconds, payload) {
+  const version = 0x04;
+  const expiredTime = Math.floor(Date.now() / 1000) + effectiveTimeInSeconds;
+
+  const nonce = crypto.randomBytes(16).toString("hex");
+  const data = {
+    app_id: appId,
+    user_id: userId,
+    nonce,
+    ctime: Math.floor(Date.now() / 1000),
+    expire: expiredTime,
+    payload
+  };
+
+  const base64Data = Buffer.from(JSON.stringify(data)).toString("base64");
+  const hmac = crypto.createHmac("sha256", serverSecret);
+  hmac.update(base64Data);
+  const signature = hmac.digest("hex");
+
+  const token = Buffer.from(`${version}${signature}${base64Data}`).toString("base64");
+  return token;
+}
 router.post("/create", async (req, res) => {
   const { creatorId, partnerId, roomName } = req.body;
 
@@ -34,6 +60,23 @@ router.post("/create", async (req, res) => {
   }
 });
 
+router.post("/token", (req, res) => {
+  const { userId, roomName } = req.body;
+
+  if (!userId || !roomName) {
+    return res.status(400).json({ error: "userId and roomName are required" });
+  }
+
+  try {
+    const effectiveTimeInSeconds = 3600; 
+    const payload = "";
+    const token = generateToken(APP_ID, userId, SERVER_SECRET, effectiveTimeInSeconds, payload);
+    res.json({ token });
+  } catch (err) {
+    console.error("Error generating Zego token:", err);
+    res.status(500).json({ error: "Failed to generate token" });
+  }
+});
 
 router.get("/active/:userId", async (req, res) => {
   const { userId } = req.params;

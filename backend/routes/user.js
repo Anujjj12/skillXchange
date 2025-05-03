@@ -36,6 +36,7 @@ router.get("/suggestions", authMiddleware, async (req, res) => {
 
 router.get("/profile/:id", async (req, res) => {
   try {
+    console.log("Fetching profile for user ID:", req.params.id);
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -67,6 +68,7 @@ router.post("/connect/request", async (req, res) => {
       return res.status(400).json({message : "Connection request already sent"})
     }
 
+    const receiver = await User.findById(receiverId);
     const newRequest = new ConnectionRequest({ senderId, receiverId });
     await newRequest.save();
 
@@ -159,11 +161,8 @@ router.post("/connect/reject", async (req, res) => {
   const { senderId, receiverId } = req.body;
   
   try{
-    const request = await ConnectionRequest.findOne({ senderId, receiverId, status : "pending" });
-    if(!request) return res.status(404).json({message : "Request not found"});
-
-    request.status = "rejected";
-    await request.save();
+    const request = await ConnectionRequest.deleteOne({ senderId, receiverId, status : "pending" });
+    if(request.deletedCount) return res.status(404).json({message : "Request not found"});
 
     res.status(200).json({ message: "Connection request rejected" });
 
@@ -290,31 +289,33 @@ router.get('/skills/unique/:userId', async (req, res) => {
 });
 
 router.get("/getusers", authMiddleware, async (req, res) => {
-    try {
-        const loggedInUserId = req.userId; 
-        
-        const users = await User.find(
-            { _id: { $ne: loggedInUserId } },
-            "name email skillsHave skillsWant"
-        );
+  try {
+    const loggedInUserId = req.user._id;
 
-        const unreadSenders = await Message.distinct("sender", {
-            receiver: loggedInUserId,
-            isRead: false
-        });
+    const connections = await ConnectionRequest.find({
+      $or: [
+        { senderId: loggedInUserId },
+        { receiverId: loggedInUserId }
+      ],
+      status: "accepted",
+    });
 
-        const unreadSendersSet = new Set(unreadSenders.map(id => id.toString()));
+    const connectedUserIds = connections.map(conn => {
+      return conn.senderId.toString() === loggedInUserId.toString()
+        ? conn.receiverId
+        : conn.senderId;
+    });
 
-        const usersWithUnreadFlags = users.map(user => ({
-            ...user.toObject(),
-            hasUnreadMessages: unreadSendersSet.has(user._id.toString())
-        }));
+    const users = await User.find(
+      { _id: { $in: connectedUserIds } },
+      "name email skillsHave skillsWant"
+    );
 
-        res.status(200).json(usersWithUnreadFlags);
-    } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching connected users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 router.post("/report", async (req, res) => {
@@ -375,6 +376,16 @@ router.get("/has-reported/:reportedUserId", async (req, res) => {
     res.json({ hasReported: !!existing });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.put("/update-profile/:id", async (req, res) => {
+  try {
+    const updates = req.body;
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(400).json({ message: "Error updating profile", error: err.message });
   }
 });
 

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import SuggestionCard from "./SuggestionCard";
 import { fetchSuggestions } from "@/api/userApi";
-import SkillsMatcher from "./SkillsMatcher";
+import { BookOpen, CreditCard, LayoutDashboard, User2Icon, Users } from "lucide-react";
 
 export default function Dashboard() {
   const [userName, setUserName] = useState("");
@@ -15,7 +14,7 @@ export default function Dashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const suggestions = async () => {
+    const getSuggestions = async () => {
       try {
         const response = await fetchSuggestions();
         setSuggestions(response);
@@ -27,40 +26,70 @@ export default function Dashboard() {
     };
 
     if (user) {
-      suggestions();
+      getSuggestions();
       setUserName(user.name);
     }
   }, [user]);
 
   if (!user) return <p>Loading user...</p>;
-  if(error) return <p>{error}</p>;
-  const shouldShowSuggestions = !matchedUsers || matchedUsers.length === 0;
+  if (error) return <p>{error}</p>;
 
   return (
-    <div className="container mx-auto p-4">
-      <p> {user.name} </p>
-      <h2 className="text-xl font-semibold mb-2">{userName}</h2>
-      <h2 className="text-2xl font-bold mb-4">Skill Exchange Suggestions</h2>
+    <div className="h-screen flex flex-col">
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="w-1/6 min-w-[180px] bg-gray-200 p-4 flex flex-col gap-4">
+          <Link
+            to={`/dashboard/profile-update/${user._id}`}
+            className="flex items-center gap-2 text-gray-800 hover:bg-gray-300 p-2 rounded-md"
+          >
+            <User2Icon size={18} />
+            {`Hello ${user.name}`}
+          </Link>
 
-      {user && (
-        <div className="mb-6">
-          <SkillsMatcher userId={user._id} setMatchedUsers={setMatchedUsers} />
-        </div>
-      )}
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 text-gray-800 hover:bg-gray-300 p-2 rounded-md"
+          >
+            <LayoutDashboard size={18} />
+            Dashboard
+          </Link>
 
-      {loading ? (
-        <p>Loading suggestions...</p>
-      ) : matchedUsers.length === 0 ? (
-        suggestions.length === 0 ? (
-          <p>No matching users found yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {suggestions.map((suggestedUser) => (
-              <SuggestionCard key={suggestedUser._id} user={suggestedUser} />
-            ))}
-          </div>
-        )
-      ) : null}
+          <Link
+            to="/dashboard/course-suggestions"
+            className="flex items-center gap-2 text-gray-800 hover:bg-gray-300 p-2 rounded-md"
+          >
+            <BookOpen size={18} />
+            Course Suggestions
+          </Link>
+
+          <Link
+            to="/dashboard/view-profiles"
+            className="flex items-center gap-2 text-gray-800 hover:bg-gray-300 p-2 rounded-md"
+          >
+            <Users size={18} />
+            Connected Users
+          </Link>
+
+          <Link
+            to="/dashboard/subscription"
+            className="flex items-center gap-2 text-gray-800 hover:bg-gray-300 p-2 rounded-md"
+          >
+            <CreditCard size={18} />
+            Subscription
+          </Link>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          {loading ? (
+            <p>Loading suggestions...</p>
+          ) : (
+            <Outlet
+              context={{ user, matchedUsers, setMatchedUsers, suggestions }}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

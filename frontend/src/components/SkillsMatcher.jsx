@@ -11,7 +11,9 @@ const SkillsMatcher = ({ userId, setMatchedUsers }) => {
 
   useEffect(() => {
     const fetchSkills = async () => {
-      const res = await axios.get(`http://localhost:5000/user/skills/unique/${userId}`);
+      const res = await axios.get(
+        `http://localhost:5000/user/skills/unique/${userId}`
+      );
       setSkillsOptions(res.data);
     };
 
@@ -22,14 +24,16 @@ const SkillsMatcher = ({ userId, setMatchedUsers }) => {
     const fetchMatches = async () => {
       if (!selectedSkill) {
         setMatches([]);
-        setMatchedUsers([]); // reset matchedUsers in dashboard
+        setMatchedUsers([]);
         return;
       }
 
       try {
-        const res = await axios.get(`http://localhost:5000/user/search/${userId}/${selectedSkill}`);
+        const res = await axios.get(
+          `http://localhost:5000/user/search/${userId}/${selectedSkill}`
+        );
         setMatches(res.data);
-        setMatchedUsers(res.data); // update matchedUsers in dashboard
+        setMatchedUsers(res.data);
       } catch (err) {
         console.error("Error fetching matches:", err);
         setMatches([]);
@@ -41,28 +45,43 @@ const SkillsMatcher = ({ userId, setMatchedUsers }) => {
   }, [selectedSkill, userId, setMatchedUsers]);
 
   return (
-    <div className="p-4">
-      <select
-        value={selectedSkill}
-        onChange={(e) => setSelectedSkill(e.target.value)}
-        className="border p-2 rounded w-full max-w-md"
-      >
-        <option value="">Select a skill</option>
-        {skillsOptions.map((skill, idx) => (
-          <option key={idx} value={skill}>
-            {skill}
-          </option>
-        ))}
-      </select>
+    <div className="p-4 w-full max-w-4xl mx-auto">
+      <div className="relative w-full mb-6">
+        <label className="block mb-3 text-lg font-bold text-gray-800">
+          Select a Skill
+        </label>
+        <select
+          value={selectedSkill}
+          onChange={(e) => setSelectedSkill(e.target.value)}
+          className="block w-full bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-xl focus:ring-blue-600 focus:border-blue-600 p-3 shadow-sm transition duration-200"
+        >
+          <option value="">-- Choose a skill --</option>
+          {skillsOptions.map((skill, idx) => (
+            <option key={idx} value={skill}>
+              {skill}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {matches.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {matches.map((user) => (
-            <Card key={user._id} className="shadow-md hover:shadow-lg transition duration-300" onClick={() => navigate(`/profile/${user._id}`)}>
-              <CardContent>
-                <h3 className="text-lg font-semibold">{user.name}</h3>
-                <p className="text-sm">Has: {user.skillsHave.join(", ")}</p>
-                <p className="text-sm text-gray-600">Wants: {user.skillsWant.join(", ")}</p>
+            <Card
+              key={user._id}
+              className="cursor-pointer transition-transform transform hover:scale-105 hover:shadow-lg rounded-lg"
+              onClick={() => navigate(`/dashboard/profile/${user._id}`)}
+            >
+              <CardContent className="p-4">
+                <h3 className="text-lg font-bold text-gray-800">{user.name}</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  <strong>Skills They Have:</strong>{" "}
+                  {user.skillsHave?.join(", ") || "None"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Skills They Want:</strong>{" "}
+                  {user.skillsWant?.join(", ") || "None"}
+                </p>
               </CardContent>
             </Card>
           ))}

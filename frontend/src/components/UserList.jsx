@@ -9,16 +9,14 @@ const UserList = () => {
   const [loggedInUserId, setLoggedInUserId] = useState("");
 
   useEffect(() => {
-    // Extract user ID from the JWT token
     const token = localStorage.getItem("token");
     if (!token) {
       setError("User not authenticated");
       return;
     }
 
-    // Decode the token to get user ID
-    const decodedToken = JSON.parse(atob(token.split(".")[1])); // Decoding JWT
-    const userId = decodedToken.userId; // Assuming 'userId' is stored in token payload
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
+    const userId = decodedToken.userId;
     setLoggedInUserId(userId);
 
     if (!userId) {
@@ -28,13 +26,16 @@ const UserList = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/user/getusers?loggedInUserId=${userId}`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+        const response = await fetch(
+          `http://localhost:5000/user/getusers?loggedInUserId=${userId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        });
+        );
 
         if (!response.ok) {
           throw new Error("Failed to fetch users");
@@ -58,16 +59,26 @@ const UserList = () => {
       <h2 className="text-2xl font-bold mb-4">Users</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {users.map((user) => (
-          <div key={user._id} className="p-4 bg-white shadow-md rounded-md relative">
+          <div
+            key={user._id}
+            className="p-4 bg-white shadow-md rounded-md relative"
+          >
             <h3 className="text-lg font-semibold">{user.name}</h3>
-            <p className="text-gray-600"><strong>Email:</strong> {user.email}</p>
-            <p className="text-gray-600"><strong>Skills Have:</strong> {user.skillsHave.join(", ")}</p>
-            <p className="text-gray-600"><strong>Skills Want:</strong> {user.skillsWant.join(", ")}</p>
+            <p className="text-gray-600">
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p className="text-gray-600">
+              <strong>Skills Have:</strong> {user.skillsHave.join(", ")}
+            </p>
+            <p className="text-gray-600">
+              <strong>Skills Want:</strong> {user.skillsWant.join(", ")}
+            </p>
 
-            {/* ✅ Show a red dot as an indicator if this user has sent unread messages */}
             {user.hasUnreadMessages && (
-            <p className="text-red-500 font-semibold mt-2">New messages available</p>
-)}
+              <p className="text-red-500 font-semibold mt-2">
+                New messages available
+              </p>
+            )}
 
             <Link
               to={`/chat/${user._id}`}

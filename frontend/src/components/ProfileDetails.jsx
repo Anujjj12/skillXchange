@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import useAuth from "@/hooks/useAuth";
-import { Flag } from "lucide-react";
+import { Flag, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { toast } from "react-toastify";
@@ -28,7 +28,7 @@ export default function ProfileDetails() {
   // For Room Name
   useEffect(() => {
     if (currentUser && id) {
-      setRoomName(`meet-${currentUser._id}-${id}`);
+      setRoomName(`meet-${[currentUser._id, id].sort().join("-")}`);
     }
   }, [currentUser, id]);
 
@@ -50,7 +50,7 @@ export default function ProfileDetails() {
     fetchUserDetails();
   }, [id]);
 
-  // To fetch user requests 
+  // To fetch user request status
   useEffect(() => {
     const fetchRequestStatus = async () => {
       if (currentUser) {
@@ -58,6 +58,7 @@ export default function ProfileDetails() {
           const res = await axios.get(
             `http://localhost:5000/user/request/status?senderId=${currentUser._id}&receiverId=${id}`
           );
+          console.log("Request status response:", res.data);
           setRequestStatus(res.data.status);
         } catch (err) {
           console.error("Error fetching request status", err);
@@ -95,7 +96,7 @@ export default function ProfileDetails() {
   useEffect(() => {
     const checkIfReported = async () => {
       if (!currentUser || !id) return;
-  
+
       try {
         const res = await axios.get(
           `http://localhost:5000/user/has-reported/${id}?reporterId=${currentUser._id}`
@@ -105,7 +106,7 @@ export default function ProfileDetails() {
         console.error("Failed to check report status:", err);
       }
     };
-  
+
     checkIfReported();
   }, [currentUser, id]);
 
@@ -140,7 +141,7 @@ export default function ProfileDetails() {
     }
   };
 
-  // To handle accept request 
+  // To handle accept request
   const handleAcceptRequest = async () => {
     try {
       const response = await axios.post(
@@ -187,12 +188,43 @@ export default function ProfileDetails() {
         roomName,
       });
 
+      const meetingTime = new Date().toLocaleString();
+      const meetLink = `${window.location.origin}/meet/${roomName}?userId=${currentUser._id}`;
+      const message = `${currentUser.name} started a meeting with you at ${meetingTime}. Click to join: ${meetLink}`;
+
+      await axios.post("http://localhost:5000/user/notifications", {
+        senderId: currentUser._id,
+        receiverId: id,
+        senderName: currentUser.name,
+        senderEmail: currentUser.email,
+        message,
+      });
+
       toast.success("Meeting joined successfully!");
       navigate(`/meet/${roomName}?userId=${currentUser._id}`);
     } catch (error) {
       console.error("Error creating meeting:", error);
     }
   };
+
+  const joinMeeting = async () => {
+    // 1. Prepare notification details
+    const meetingTime = new Date().toLocaleString();
+    const meetLink = `${window.location.origin}/meet/${activeMeeting.roomName}?userId=${currentUser._id}`;
+    const message = `${currentUser.name} joined your meeting at ${meetingTime}. Click to join: ${meetLink}`;
+  
+    // 2. Send notification to partner
+    await axios.post("http://localhost:5000/user/notifications", {
+      senderId: currentUser._id,
+      receiverId: id, // the partner's user id
+      senderName: currentUser.name,
+      senderEmail: currentUser.email,
+      message,
+    });
+  
+    navigate(`/meet/${activeMeeting.roomName}?userId=${currentUser._id}`);
+  };
+  
 
   // To handle report
   const handleReport = async () => {
@@ -202,7 +234,7 @@ export default function ProfileDetails() {
         reportedUserId: id,
         reason: reportReason,
       });
-  
+
       if (res.status === 200) {
         toast.success("Report submitted successfully!");
         setHasReported(true);
@@ -212,134 +244,186 @@ export default function ProfileDetails() {
     } catch (error) {
       const status = error.response?.status;
       const message = error.response?.data?.message || "Something went wrong.";
-  
+
       if (status === 400) {
-        toast.error("You have already reported this user.");        
+        toast.error("You have already reported this user.");
         setHasReported(true);
       } else if (status === 403) {
         toast.error("You cannot report yourself.");
       } else {
         toast.error("Failed to submit report. Please try again later.");
       }
-  
+
       console.error("Error submitting report:", message);
     }
   };
-  
 
-  if (loading) return <p>Loading user details...</p>;
-  if (error) return <p>{error}</p>;
-  if (!user) return <p>User not found</p>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="text-gray-500">Loading user details...</span>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="text-red-500">{error}</span>
+      </div>
+    );
+  if (!user)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="text-gray-500">User not found</span>
+      </div>
+    );
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold">{user.name}'s Profile</h2>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Skills Have:</strong> {user.skillsHave?.join(", ") || "None"}</p>
-          <p><strong>Skills Want:</strong> {user.skillsWant?.join(", ") || "None"}</p>
-        </div>
-
-        {/* Report Icon */}
-        {currentUser._id !== user._id && (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-10 px-2">
+      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8 relative">
+        {/* Report Button */}
+        {currentUser && user && currentUser._id !== user._id && (
           <Button
             variant="ghost"
             onClick={() => setReportOpen(true)}
             disabled={hasReported}
-            className="text-red-500"
+            className="group relative p-0.5 rounded-full bg-red-50 hover:bg-red-100 shadow transition"
+            title={hasReported ? "Already reported" : "Report user"}
           >
-            <Flag className="w-5 h-5" />
+            <span className="flex items-center justify-center w-10 h-10">
+              <ShieldAlert className="w-5 h-5 text-red-500 group-hover:text-red-600 transition" />
+            </span>
           </Button>
         )}
+
+        {/* Profile Info */}
+        <div className="flex flex-col items-center gap-2 mb-6">
+          <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-3xl font-bold text-blue-500 mb-2">
+            {user.name[0]}
+          </div>
+          <h2 className="text-2xl font-semibold">{user.name}</h2>
+          <p className="text-gray-500">{user.email}</p>
+        </div>
+
+        {/* Skills */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-1">
+              Skills Have
+            </h3>
+            <div className="bg-gray-100 rounded px-3 py-2 text-gray-700 text-sm min-h-[36px]">
+              {user.skillsHave?.length ? (
+                user.skillsHave.join(", ")
+              ) : (
+                <span className="text-gray-400">None</span>
+              )}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-1">
+              Skills Want
+            </h3>
+            <div className="bg-gray-100 rounded px-3 py-2 text-gray-700 text-sm min-h-[36px]">
+              {user.skillsWant?.length ? (
+                user.skillsWant.join(", ")
+              ) : (
+                <span className="text-gray-400">None</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Connection Actions */}
+        <div className="flex flex-col items-center gap-2 mb-4">
+          {requestStatus === "pending" ? (
+            <span className="text-blue-500 font-medium">Request Sent</span>
+          ) : requestStatus === "accepted" ? (
+            <span className="text-green-600 font-medium">
+              You are connected
+            </span>
+          ) : requestStatus === "received" ? (
+            <div className="flex gap-3">
+              <Button
+                onClick={handleAcceptRequest}
+                className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
+              >
+                Accept
+              </Button>
+              <Button
+                onClick={handleRejectRequest}
+                className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg shadow"
+              >
+                Reject
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={sendConnectionRequest}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow"
+            >
+              Connect
+            </Button>
+          )}
+          {message && <span className="text-sm text-gray-500">{message}</span>}
+        </div>
+
+        {/* Meeting Actions */}
+        {requestStatus === "accepted" && (
+          <div className="flex flex-col items-center gap-2 mb-4">
+            {loadingMeeting ? (
+              <span className="text-gray-400">Checking meeting status...</span>
+            ) : activeMeeting ? (
+              <Button
+                onClick={joinMeeting}
+                className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg shadow"
+              >
+                Join Meeting
+              </Button>
+            ) : (
+              <Button
+                onClick={createMeeting}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg shadow"
+              >
+                Create Meeting
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Subscription Button */}
+        <div className="flex justify-center mt-6">
+          <Button
+            onClick={() => navigate("/subscription")}
+            className="bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg shadow"
+          >
+            View Subscription Plans
+          </Button>
+        </div>
       </div>
 
-      {requestStatus === "pending" ? (
-        <p className="text-gray-500">Request Sent</p>
-      ) : requestStatus === "accepted" ? (
-        <p className="text-green-500">You are connected</p>
-      ) : requestStatus === "received" ? (
-        <div>
-          <button
-            onClick={handleAcceptRequest}
-            className="bg-green-500 text-white px-4 py-2 rounded mr-2"
-          >
-            Accept
-          </button>
-          <button
-            onClick={handleRejectRequest}
-            className="bg-red-500 text-white px-4 py-2 rounded"
-          >
-            Reject
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={sendConnectionRequest}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Connect
-        </button>
-      )}
-
-      <p>{message}</p>
-
-      {requestStatus === "accepted" && (
-        <>
-          {loadingMeeting ? (
-            <p className="mt-4 text-gray-500">Checking meeting status...</p>
-          ) : activeMeeting ? (
-            <button
-              onClick={() =>
-                navigate(
-                  `/meet/${activeMeeting.roomName}?userId=${currentUser._id}`
-                )
-              }
-              className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-            >
-              Join Meeting
-            </button>
-          ) : (
-            <button
-              onClick={createMeeting}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Create Meeting
-            </button>
-          )}
-        </>
-      )}
-
-      <button
-        onClick={() => navigate("/subscription")}
-        className="mt-4 bg-purple-500 text-white px-4 py-2 rounded"
-      >
-        View Subscription Plans
-      </button>
-
+      {/* Report Dialog */}
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Report {user.name}</DialogTitle>
           </DialogHeader>
-
           <select
             value={reportReason}
             onChange={(e) => setReportReason(e.target.value)}
-            className="w-full border rounded p-2 mt-2"
+            className="w-full border rounded px-3 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
           >
             <option value="">Select a reason</option>
             <option value="Spam">Spam</option>
-            <option value="Inappropriate behavior">Inappropriate behavior</option>
+            <option value="Inappropriate behavior">
+              Inappropriate behavior
+            </option>
             <option value="Fake account">Fake account</option>
             <option value="Other">Other</option>
           </select>
-
           <Button
             variant="ghost"
             onClick={handleReport}
             disabled={!reportReason || hasReported}
-            className="w-full mt-4"
+            className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white"
           >
             Submit Report
           </Button>
