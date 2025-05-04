@@ -26,9 +26,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-              {/* Dashboard layout */}
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<SuggestionsHome />} /> {/* default */}
                 <Route path="profile/:id" element={<ProfileDetails />} />
@@ -38,7 +36,6 @@ export default function App() {
                 <Route path="/dashboard/course-suggestions" element={<CourseSuggestions />} />
               </Route>
 
-              {/* Other routes outside Dashboard layout */}
               <Route path="/meet/:roomName" element={<Meet />} />
               <Route path="/chat/:userId" element={<Chat />} />
             </Route>

@@ -79,7 +79,6 @@ export default function Dashboard() {
           </Link>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 p-6 overflow-y-auto">
           {loading ? (
             <p>Loading suggestions...</p>

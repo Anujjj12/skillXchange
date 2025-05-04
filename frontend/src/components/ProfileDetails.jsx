@@ -208,15 +208,13 @@ export default function ProfileDetails() {
   };
 
   const joinMeeting = async () => {
-    // 1. Prepare notification details
     const meetingTime = new Date().toLocaleString();
     const meetLink = `${window.location.origin}/meet/${activeMeeting.roomName}?userId=${currentUser._id}`;
     const message = `${currentUser.name} joined your meeting at ${meetingTime}. Click to join: ${meetLink}`;
   
-    // 2. Send notification to partner
     await axios.post("http://localhost:5000/user/notifications", {
       senderId: currentUser._id,
-      receiverId: id, // the partner's user id
+      receiverId: id, 
       senderName: currentUser.name,
       senderEmail: currentUser.email,
       message,
@@ -225,7 +223,6 @@ export default function ProfileDetails() {
     navigate(`/meet/${activeMeeting.roomName}?userId=${currentUser._id}`);
   };
   
-
   // To handle report
   const handleReport = async () => {
     try {
@@ -280,7 +277,7 @@ export default function ProfileDetails() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-10 px-2">
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8 relative">
-        {/* Report Button */}
+
         {currentUser && user && currentUser._id !== user._id && (
           <Button
             variant="ghost"
@@ -295,7 +292,6 @@ export default function ProfileDetails() {
           </Button>
         )}
 
-        {/* Profile Info */}
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-3xl font-bold text-blue-500 mb-2">
             {user.name[0]}
@@ -304,7 +300,6 @@ export default function ProfileDetails() {
           <p className="text-gray-500">{user.email}</p>
         </div>
 
-        {/* Skills */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-1">
@@ -332,7 +327,6 @@ export default function ProfileDetails() {
           </div>
         </div>
 
-        {/* Connection Actions */}
         <div className="flex flex-col items-center gap-2 mb-4">
           {requestStatus === "pending" ? (
             <span className="text-blue-500 font-medium">Request Sent</span>
@@ -366,7 +360,6 @@ export default function ProfileDetails() {
           {message && <span className="text-sm text-gray-500">{message}</span>}
         </div>
 
-        {/* Meeting Actions */}
         {requestStatus === "accepted" && (
           <div className="flex flex-col items-center gap-2 mb-4">
             {loadingMeeting ? (
@@ -389,7 +382,6 @@ export default function ProfileDetails() {
           </div>
         )}
 
-        {/* Subscription Button */}
         <div className="flex justify-center mt-6">
           <Button
             onClick={() => navigate("/subscription")}
@@ -400,7 +392,6 @@ export default function ProfileDetails() {
         </div>
       </div>
 
-      {/* Report Dialog */}
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

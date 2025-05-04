@@ -8,13 +8,12 @@ function Chat() {
 const { userId: selectedUserId } = useParams();
 const [loggedInUserId, setLoggedInUserId] = useState(null);
 
-  // Extract logged-in user ID from JWT token in localStorage
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setLoggedInUserId(decoded.userId); // Ensure backend sends userId inside JWT
+        setLoggedInUserId(decoded.userId); 
       } catch (error) {
         console.error("Invalid token", error);
       }

@@ -95,7 +95,6 @@ const Subscription = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {/* Basic Plan */}
         <div className="bg-gray-100 h-[420px] rounded-lg shadow-md flex flex-col justify-between p-6">
           <div>
             <h3 className="text-xl font-semibold text-center mb-2">
@@ -122,7 +121,6 @@ const Subscription = () => {
           </button>
         </div>
 
-        {/* Premium Plan */}
         <div className="bg-gray-100 h-[420px] rounded-lg shadow-md flex flex-col justify-between p-6">
           <div>
             <h3 className="text-xl font-semibold text-center mb-2">
@@ -149,7 +147,6 @@ const Subscription = () => {
           </button>
         </div>
 
-        {/* Coming Soon Plan */}
         <div className="bg-gray-100 h-[420px] rounded-lg shadow-md flex flex-col justify-between p-6">
           <div>
             <h3 className="text-xl font-semibold text-center mb-2">

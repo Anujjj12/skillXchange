@@ -77,7 +77,6 @@ const Register = () => {
             <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border rounded"/>
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border rounded"/>
 
-            {/* Skills You Have */}
             <input type="text" placeholder="Skills you have (max 3, comma separated)"
               value={skillsHave.join(", ")}
               onChange={(e) => {
@@ -86,7 +85,6 @@ const Register = () => {
               }}
               className="w-full p-2 border rounded"/>
 
-            {/* Skills You Want */}
             <input type="text" placeholder="Skills you want to learn (max 3, comma separated)"
               value={skillsWant.join(", ")}
               onChange={(e) => {

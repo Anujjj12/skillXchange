@@ -23,7 +23,6 @@ export default function Navbar() {
     }
   }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (bellRef.current && !bellRef.current.contains(event.target)) {
@@ -84,7 +83,6 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur shadow-md px-4 py-2 flex items-center justify-between">
-      {/* Logo */}
       <div
         className="text-2xl font-extrabold text-blue-700 cursor-pointer tracking-tight"
         onClick={() => navigate("/")}
@@ -92,8 +90,6 @@ export default function Navbar() {
         MyWebsite
       </div>
 
-      {/* Search Bar */}
-      {/* Search Bar - Only for Logged In Users */}
       {isLoggedIn && (
         <form
           onSubmit={handleSearch}
@@ -110,9 +106,7 @@ export default function Navbar() {
         </form>
       )}
 
-      {/* Right Section */}
       <div className="flex items-center gap-4">
-        {/* Notification Bell */}
         {isLoggedIn && (
           <div className="relative" ref={bellRef}>
             <button
@@ -128,7 +122,7 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-            {/* Dropdown */}
+
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-fade-in z-50">
                 <div className="p-3 border-b font-semibold text-blue-700 bg-blue-50">
@@ -164,7 +158,6 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* Auth Button */}
         <button
           onClick={handleAuth}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-semibold shadow transition"

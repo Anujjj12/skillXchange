@@ -39,7 +39,6 @@ const Meet = () => {
       showScreenSharingButton: true,
       showPreJoinView: false,
 
-      // 👇 Hook into onLeaveRoom to show a custom button
       onLeaveRoom: () => {
         const leaveUI = document.createElement("div");
         leaveUI.style.cssText = `
