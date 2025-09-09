@@ -1,4 +1,7 @@
 const axios = require('axios');
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
@@ -9,7 +12,7 @@ const CHANNELS = {
   traversymedia: 'UC29ju8bIPH5as8OGnQzwJyA',
 };
 
-const recommendVideos = async (req, res) => {
+async function recommendVideos (req, res) {
   const { interests = [], channel = 'freecodecamp' } = req.body;
   const channelId = CHANNELS[channel.toLowerCase()];
   if (!channelId) return res.status(400).json({ error: 'Unknown channel' });

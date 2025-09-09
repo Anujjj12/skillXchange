@@ -9,23 +9,17 @@ const meetAuth = (userId, userName, roomName, userEmail) => {
         name: userName,
         email: userEmail,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}`,
-        moderator: true,  // Make the user a moderator
+        moderator: true,
       },
     },
-    aud: "jitsi",  // Required for Jitsi authentication
+    aud: "jitsi",
     iss: "chat",
     sub: "meet.jit.si",
     room: roomName,
-    exp: Math.floor(Date.now() / 1000) + 3600, // 1-hour expiry
+    exp: Math.floor(Date.now() / 1000) + 3600,
   };
 
   return jwt.sign(payload, process.env.JITSI_SECRET, { algorithm: "HS256" });
 };
 
 module.exports = meetAuth;
-
-// const meetAuth = (roomName) => {
-//   return `https://meet.jit.si/${roomName}`;
-// };
-
-// module.exports = meetAuth;
